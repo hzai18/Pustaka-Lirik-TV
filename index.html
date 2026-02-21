@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Al-Mursyidul Amin TV - Studio Lirik Cloud</title>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #1a1a1a; --bg-sidebar: #111; --text-light: #fff; --text-dim: #ccc;
+            --accent: #d4af37; --accent-hover: #b5952f; --danger: #e74c3c; --success: #27ae60;
+            --arabic-size: 55px; --arabic-color: #ffffff;
+            --latin-size: 28px; --latin-color: #eeeeee;
+            --bg-main-color: #333333; --bg-image: none;
+            --overlay-color: 0, 0, 0; --overlay-opacity: 0.5; 
+        }
+
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; background-color: var(--bg-sidebar); color: var(--text-light); display: flex; overflow: hidden; }
+
+        /* --- SPLASH SCREEN --- */
+        #splash-screen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: #111; z-index: 99999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 1s ease-out;
+        }
+        #splash-screen img { width: 300px; margin-bottom: 30px; animation: pulse 2s infinite; }
+        #splash-screen h1 { color: var(--accent); font-size: 32px; letter-spacing: 2px; text-shadow: 2px 2px 5px rgba(0,0,0,0.5); text-align: center; }
+        @keyframes pulse { 0% { transform: scale(0.95); } 50% { transform: scale(1.05); } 100% { transform: scale(0.95); } }
+
+        /* --- UI UTAMA --- */
+        .sidebar { width: 320px; background-color: var(--bg-sidebar); border-right: 2px solid #333; display: flex; flex-direction: column; overflow-y: auto; z-index: 10; position: relative; }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid #333; text-align: center; }
+        .sidebar-header h2 { margin: 0 0 15px 0; color: var(--accent); font-size: 22px; }
+        .sidebar-header img { width: 80px; margin-bottom: 10px; }
+        .btn-tambah-menu { background-color: var(--accent); color: #000; border: none; padding: 10px; width: 100%; font-weight: bold; border-radius: 5px; cursor: pointer; transition: 0.3s; margin-bottom: 10px; }
+        .btn-tambah-menu:hover { background-color: var(--accent-hover); }
+        .btn-setting { background-color: #444; color: white; border: none; padding: 10px; width: 100%; font-weight: bold; border-radius: 5px; cursor: pointer; transition: 0.3s; }
+        .btn-setting:hover { background-color: #555; }
+        .menu-list { flex: 1; display: flex; flex-direction: column; }
+        .menu-btn { background: none; border: none; color: var(--text-dim); padding: 15px 20px; text-align: left; font-size: 16px; cursor: pointer; border-left: 4px solid transparent; border-bottom: 1px solid #222; }
+        .menu-btn:hover, .menu-btn.active { background-color: rgba(255,255,255,0.05); color: var(--accent); border-left: 4px solid var(--accent); }
+        
+        .main-content { flex: 1; padding: 40px; overflow-y: auto; position: relative; background-color: #222; }
+        .view-section { display: none; width: 100%; max-width: 900px; margin: 0 auto; animation: fadeIn 0.4s; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .header-lirik { text-align: center; margin-bottom: 30px; background: #111; border-radius: 10px; padding: 20px; border: 1px solid #333; }
+        .judul-lagu { color: var(--accent); font-size: 32px; margin: 0 0 15px 0; }
+        .action-buttons { display: flex; justify-content: center; gap: 10px; }
+        .btn-action { color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-present { background-color: var(--success); } .btn-edit { background-color: #2980b9; } .btn-hapus { background-color: var(--danger); }
+        
+        .bait-preview { background-color: #111; margin-bottom: 15px; padding: 15px; border-radius: 10px; border: 1px solid #333; text-align: center; }
+        .arab-prev { font-family: 'Amiri', serif; font-size: 28px; color: var(--accent); direction: rtl; line-height: 1.5; font-weight: bold; }
+        .latin-prev { font-size: 16px; color: #aaa; margin-top: 10px; font-style: italic; }
+        
+        .form-container { background-color: #222; padding: 30px; border-radius: 10px; border: 1px solid #444; margin-bottom: 20px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; color: var(--accent); font-weight: bold; }
+        .form-group input { width: 100%; padding: 12px; background: #111; border: 1px solid #444; color: white; border-radius: 5px; font-size: 16px; box-sizing: border-box; }
+        .form-group input[type="color"] { height: 50px; padding: 5px; cursor: pointer; }
+        .form-group input[type="range"] { cursor: pointer; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        
+        .bait-editor { background: #111; padding: 15px; border: 1px solid #444; border-radius: 8px; margin-bottom: 15px; position: relative; border-left: 4px solid var(--accent); }
+        .bait-editor textarea { width: 100%; background: #222; border: 1px solid #555; color: white; padding: 10px; margin-bottom: 10px; border-radius: 5px; resize: vertical; box-sizing: border-box; }
+        .arab-input { font-family: 'Amiri', serif; font-size: 24px; direction: rtl; height: 90px; }
+        .latin-input { font-size: 16px; height: 70px; }
+        .btn-hapus-bait { position: absolute; top: 10px; left: 10px; background: var(--danger); color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px; }
+        .btn-simpan { background-color: var(--success); color: white; border: none; padding: 15px; width: 100%; font-size: 18px; font-weight: bold; border-radius: 5px; cursor: pointer; margin-top: 10px; }
+        .btn-tambah-bait { background-color: var(--accent); color: black; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-bottom: 20px; }
+
+        .auto-split-box { background: rgba(212, 175, 55, 0.1); border: 2px dashed var(--accent); }
+        .auto-split-box textarea { width: 100%; height: 120px; background: #111; border: 1px solid #444; color: white; border-radius: 5px; padding: 10px; box-sizing: border-box; resize: vertical; margin-bottom: 10px; line-height: 1.5;}
+        .btn-magic { background-color: #8e44ad; color: white; border: none; padding: 12px; width: 100%; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        .btn-magic:hover { background-color: #9b59b6; }
+
+        /* Status Koneksi Database */
+        #db-status { position: absolute; bottom: 10px; left: 0; width: 100%; text-align: center; font-size: 12px; color: #888; }
+        .status-dot { display: inline-block; width: 8px; height: 8px; background: orange; border-radius: 50%; margin-right: 5px; }
+        .status-dot.online { background: #2ecc71; }
+
+        /* --- MODE PRESENTASI (PPT STYLE) --- */
+        #ppt-mode { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 9999; flex-direction: row; }
+        #ppt-mode.active { display: flex; }
+        #ppt-sidebar { width: 220px; background: #111; border-right: 1px solid #333; overflow-y: auto; padding: 20px 10px; display: flex; flex-direction: column; gap: 15px; }
+        .ppt-thumb-wrap { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; }
+        .ppt-num { color: #888; font-size: 14px; margin-top: 5px; width: 15px; text-align: right; }
+        .ppt-box { background: white; border-radius: 6px; border: 3px solid transparent; aspect-ratio: 16/9; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 5px; text-align: center; overflow: hidden; transition: 0.2s; position: relative; }
+        .ppt-thumb-wrap.active .ppt-box { border-color: #ff9800; box-shadow: 0 0 10px rgba(255, 152, 0, 0.5); }
+        .ppt-box-arab { font-family: 'Amiri', serif; font-size: 14px; color: black; direction: rtl; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 90%; }
+        .ppt-box-latin { font-size: 8px; color: #555; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 90%; }
+        
+        #ppt-stage { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: var(--bg-main-color); background-image: var(--bg-image); background-size: cover; background-position: center; position: relative; padding: 30px; }
+        .ppt-content-wrapper { z-index: 2; display: flex; flex-direction: column; align-items: center; max-width: 85%; background-color: rgba(var(--overlay-color), var(--overlay-opacity)); backdrop-filter: blur(5px); padding: 30px 50px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: all 0.3s ease; }
+        #ppt-arabic { font-family: 'Amiri', serif; font-size: var(--arabic-size); color: var(--arabic-color); direction: rtl; line-height: 1.6; font-weight: bold; margin-bottom: 20px; text-shadow: 2px 2px 5px rgba(0,0,0,0.3); transition: 0.3s; text-align: center; }
+        #ppt-latin { font-size: var(--latin-size); color: var(--latin-color); font-style: italic; transition: 0.3s; text-shadow: 1px 1px 3px rgba(0,0,0,0.3); text-align: center; }
+
+        #btn-exit-ppt { position: absolute; top: 20px; right: 20px; z-index: 100; background: rgba(0,0,0,0.6); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px; }
+        #btn-exit-ppt:hover { background: var(--danger); }
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+    <div id="splash-screen">
+        <img src="logo.png" alt="Logo Al-Mursyidul Amin" onerror="this.style.display='none'">
+        <h1>PUSTAKA SYAIR AL-MURSYIDUL AMIN TV</h1>
+    </div>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Al-Mursyidul Amin TV</h2>
+            <button class="btn-tambah-menu" onclick="bukaFormTambah()">➕ Tambah Lirik</button>
+            <button class="btn-setting" onclick="bukaPengaturan()">⚙️ Pengaturan Tampilan</button>
+        </div>
+        <div class="menu-list" id="menu-list">
+            <p style="text-align:center; color:#888; margin-top: 20px;">Memuat lirik dari Cloud...</p>
+        </div>
+        <div id="db-status"><span class="status-dot" id="dot-status"></span> <span id="text-status">Menghubungkan Database...</span></div>
+    </div>
+
+    <div class="main-content">
+        <div id="view-lirik" class="view-section">
+            <div class="header-lirik">
+                <h1 class="judul-lagu" id="display-judul">Memuat Data...</h1>
+                <div class="action-buttons" id="action-buttons" style="display: none;">
+                    <button class="btn-action btn-present" onclick="masukPresentasi()">▶️ Mode Presentasi (PPT)</button>
+                    <button class="btn-action btn-edit" onclick="editLaguSaatIni()">✏️ Edit Lirik</button>
+                    <button class="btn-action btn-hapus" onclick="hapusLaguSaatIni()">🗑️ Hapus</button>
+                </div>
+            </div>
+            <div id="display-bait-container"></div>
+        </div>
+
+        <div id="view-form" class="view-section">
+            <div class="form-container auto-split-box">
+                <h3 style="margin-top:0; color:var(--accent);">✨ Fitur Ajaib: Auto-Split Lirik</h3>
+                <p style="font-size: 14px; color: #ddd; margin-bottom: 15px;">Paste lirik campuran (Teks Arab dan Latin menempel) di bawah ini. Sistem otomatis memotongnya.</p>
+                <textarea id="bulk-input" placeholder="Paste full lirik di sini..."></textarea>
+                <button class="btn-magic" onclick="prosesAutoSplit()">⚡ Pisahkan & Buat Bait Otomatis</button>
+            </div>
+
+            <div class="form-container">
+                <h2 id="form-title" style="color: var(--accent); margin-top: 0;">Editor Lirik</h2>
+                <input type="hidden" id="edit-id">
+                <div class="form-group"><label>Judul Sholawat / Qasidah</label><input type="text" id="input-judul" autocomplete="off" placeholder="Masukkan Judul Lagu..."></div>
+                
+                <div id="editor-baits-container"></div>
+                
+                <button class="btn-tambah-bait" onclick="tambahBaitKosong()">➕ Tambah Bait Kosong</button>
+                <button class="btn-simpan" id="btn-save-cloud" onclick="simpanLagu()">☁️ SIMPAN KE CLOUD DATABASE</button>
+            </div>
+        </div>
+
+        <div id="view-settings" class="view-section">
+            <div class="form-container">
+                <h2 style="color: var(--accent); margin-top: 0;">⚙️ Pengaturan Layar Presentasi</h2>
+                <div class="grid-2">
+                    <div class="form-group"><label>Ukuran Teks Arab (px)</label><input type="number" id="set-arab-size" oninput="terapkanPengaturanSementara()"></div>
+                    <div class="form-group"><label>Warna Teks Arab</label><input type="color" id="set-arab-color" oninput="terapkanPengaturanSementara()"></div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group"><label>Ukuran Teks Terjemahan (px)</label><input type="number" id="set-latin-size" oninput="terapkanPengaturanSementara()"></div>
+                    <div class="form-group"><label>Warna Teks Terjemahan</label><input type="color" id="set-latin-color" oninput="terapkanPengaturanSementara()"></div>
+                </div>
+                <div class="form-group"><label>Warna Latar Belakang / Background</label><input type="color" id="set-bg-color" oninput="terapkanPengaturanSementara()"></div>
+                <div class="form-group"><label>Gambar Latar Belakang (URL)</label><input type="text" id="set-bg-image" oninput="terapkanPengaturanSementara()"></div>
+                <div class="form-group"><label>Kegelapan Kotak Teks (<span id="opacity-val">0.5</span>)</label><input type="range" id="set-overlay" min="0" max="1" step="0.05" oninput="terapkanPengaturanSementara()"></div>
+                <button class="btn-simpan" onclick="simpanPengaturan()">💾 Simpan Pengaturan (Di Perangkat Ini)</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="ppt-mode">
+        <button id="btn-exit-ppt" onclick="keluarPresentasi()">❌ Tutup (ESC)</button>
+        <div id="ppt-sidebar"></div>
+        <div id="ppt-stage">
+            <div class="ppt-content-wrapper">
+                <div id="ppt-arabic"></div>
+                <div id="ppt-latin"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+
+        // Konfigurasi Database Firebase Anda
+        const firebaseConfig = {
+            apiKey: "AIzaSyC0g24ujDhVT4N1FhT_qZCjrn18sD4Qf-A",
+            authDomain: "almursyidul-amin-lirik.firebaseapp.com",
+            projectId: "almursyidul-amin-lirik",
+            storageBucket: "almursyidul-amin-lirik.firebasestorage.app",
+            messagingSenderId: "541655150932",
+            appId: "1:541655150932:web:85d3e2888b7ee0d5e6d8c1",
+            measurementId: "G-MDT4SMGL6L"
+        };
+
+        // Inisialisasi Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // State Aplikasi
+        let databaseLagu = [];
+        let laguAktifId = null;
+
+        // PENGATURAN TAMPILAN (Tetap di LocalStorage per perangkat)
+        const defaultSettings = { arabSize: 55, arabColor: "#ffffff", latinSize: 28, latinColor: "#eeeeee", bgColor: "#333333", bgImage: "", overlayOpacity: 0.5 };
+        let appSettings = JSON.parse(localStorage.getItem('setting_lirik_aswaja')) || defaultSettings;
+        terapkanPengaturan();
+
+        // --- REAL-TIME LISTENER KE FIREBASE CLOUD ---
+        const q = query(collection(db, "lirik_koleksi"), orderBy("timestamp", "asc"));
+        onSnapshot(q, (snapshot) => {
+            databaseLagu = [];
+            snapshot.forEach((doc) => {
+                databaseLagu.push({ id: doc.id, ...doc.data() });
+            });
+            
+            // Ubah Status Hijau jika berhasil
+            document.getElementById('dot-status').classList.add('online');
+            document.getElementById('text-status').innerText = "Online - Tersambung ke Cloud";
+
+            renderMenu();
+            if (laguAktifId && databaseLagu.find(l => l.id === laguAktifId)) {
+                tampilkanLagu(laguAktifId);
+            } else if (databaseLagu.length > 0) {
+                tampilkanLagu(databaseLagu[0].id);
+            } else {
+                document.getElementById('display-judul').innerText = "Belum Ada Lirik di Cloud";
+                document.getElementById('action-buttons').style.display = 'none';
+            }
+        }, (error) => {
+            console.error("Gagal terhubung ke database:", error);
+            document.getElementById('text-status').innerText = "Error: Cek aturan Firestore";
+            document.getElementById('dot-status').style.background = "red";
+        });
+
+        // --- FUNGSI-FUNGSI UTAMA ---
+        // Diekspos ke window agar bisa dipanggil oleh tombol HTML (karena ini didalam type="module")
+        window.bukaFormTambah = function() {
+            sembunyikanSemuaView(); document.getElementById('view-form').classList.add('active'); 
+            document.getElementById('form-title').innerText = "Tambah Lirik Baru";
+            document.getElementById('edit-id').value = ""; document.getElementById('input-judul').value = ""; 
+            document.getElementById('editor-baits-container').innerHTML = "";
+            tambahBaitKosong();
+        };
+
+        window.tambahBaitKosong = function(arab = "", latin = "") {
+            const div = document.createElement('div'); div.className = 'bait-editor'; 
+            div.innerHTML = `<button class="btn-hapus-bait" onclick="this.parentElement.remove()">X Hapus Bait</button><label style="color:#aaa; font-size:14px; margin-bottom:5px; display:block; margin-top:10px;">Teks Arab</label><textarea class="arab-input" placeholder="Teks Arab...">${arab}</textarea><label style="color:#aaa; font-size:14px; margin-bottom:5px; display:block;">Teks Latin / Terjemahan</label><textarea class="latin-input" placeholder="Teks Latin...">${latin}</textarea>`; 
+            document.getElementById('editor-baits-container').appendChild(div); 
+        };
+
+        window.simpanLagu = async function() {
+            const judul = document.getElementById('input-judul').value.trim(); 
+            const editId = document.getElementById('edit-id').value; 
+            if(!judul) return alert("Judul wajib diisi!"); 
+            
+            const baits = []; 
+            document.querySelectorAll('.bait-editor').forEach(el => { 
+                const arab = el.querySelector('.arab-input').value.trim(); 
+                const latin = el.querySelector('.latin-input').value.trim(); 
+                if(arab || latin) baits.push({ arab, latin }); 
+            }); 
+            
+            if(baits.length === 0) return alert("Belum ada bait yang dimasukkan!"); 
+            
+            const btnSave = document.getElementById('btn-save-cloud');
+            btnSave.innerText = "⏳ Menyimpan ke Cloud...";
+            btnSave.style.opacity = "0.5";
+
+            try {
+                if(editId) { 
+                    await updateDoc(doc(db, "lirik_koleksi", editId), { judul: judul, baits: baits });
+                } else { 
+                    const docRef = await addDoc(collection(db, "lirik_koleksi"), { 
+                        judul: judul, 
+                        baits: baits,
+                        timestamp: serverTimestamp() 
+                    });
+                    laguAktifId = docRef.id;
+                }
+            } catch (error) {
+                console.error("Error menambah dokumen: ", error);
+                alert("Gagal menyimpan ke Cloud. Pastikan koneksi internet stabil.");
+            }
+
+            btnSave.innerText = "☁️ SIMPAN KE CLOUD DATABASE";
+            btnSave.style.opacity = "1";
+        };
+
+        window.editLaguSaatIni = function() {
+            const lagu = databaseLagu.find(l => l.id === laguAktifId); if(!lagu) return; 
+            sembunyikanSemuaView(); document.getElementById('view-form').classList.add('active'); 
+            document.getElementById('form-title').innerText = "Edit Lirik";
+            document.getElementById('edit-id').value = lagu.id; document.getElementById('input-judul').value = lagu.judul; 
+            document.getElementById('editor-baits-container').innerHTML = ""; 
+            lagu.baits.forEach(b => tambahBaitKosong(b.arab, b.latin));
+        };
+
+        window.hapusLaguSaatIni = async function() {
+            if(confirm("Yakin hapus lirik ini dari seluruh perangkat?")) { 
+                try {
+                    await deleteDoc(doc(db, "lirik_koleksi", laguAktifId));
+                    laguAktifId = null;
+                } catch(e) {
+                    alert("Gagal menghapus dari Cloud.");
+                }
+            }
+        };
+
+        window.bukaPengaturan = function() { sembunyikanSemuaView(); document.getElementById('view-settings').classList.add('active'); document.getElementById('set-arab-size').value = appSettings.arabSize; document.getElementById('set-arab-color').value = appSettings.arabColor; document.getElementById('set-latin-size').value = appSettings.latinSize; document.getElementById('set-latin-color').value = appSettings.latinColor; document.getElementById('set-bg-color').value = appSettings.bgColor; document.getElementById('set-bg-image').value = appSettings.bgImage; document.getElementById('set-overlay').value = appSettings.overlayOpacity; document.getElementById('opacity-val').innerText = appSettings.overlayOpacity; };
+        window.terapkanPengaturanSementara = function() { const root = document.documentElement; root.style.setProperty('--arabic-size', document.getElementById('set-arab-size').value + 'px'); root.style.setProperty('--arabic-color', document.getElementById('set-arab-color').value); root.style.setProperty('--latin-size', document.getElementById('set-latin-size').value + 'px'); root.style.setProperty('--latin-color', document.getElementById('set-latin-color').value); root.style.setProperty('--bg-main-color', document.getElementById('set-bg-color').value); const img = document.getElementById('set-bg-image').value; root.style.setProperty('--bg-image', img ? `url('${img}')` : 'none'); const opval = document.getElementById('set-overlay').value; root.style.setProperty('--overlay-opacity', opval); document.getElementById('opacity-val').innerText = opval; };
+        window.simpanPengaturan = function() { appSettings = { arabSize: document.getElementById('set-arab-size').value, arabColor: document.getElementById('set-arab-color').value, latinSize: document.getElementById('set-latin-size').value, latinColor: document.getElementById('set-latin-color').value, bgColor: document.getElementById('set-bg-color').value, bgImage: document.getElementById('set-bg-image').value, overlayOpacity: document.getElementById('set-overlay').value }; localStorage.setItem('setting_lirik_aswaja', JSON.stringify(appSettings)); alert("Pengaturan Layar Disimpan untuk Perangkat Ini!"); if(laguAktifId) tampilkanLagu(laguAktifId); };
+        
+        function terapkanPengaturan() { const root = document.documentElement; root.style.setProperty('--arabic-size', appSettings.arabSize + 'px'); root.style.setProperty('--arabic-color', appSettings.arabColor); root.style.setProperty('--latin-size', appSettings.latinSize + 'px'); root.style.setProperty('--latin-color', appSettings.latinColor); root.style.setProperty('--bg-main-color', appSettings.bgColor); root.style.setProperty('--bg-image', appSettings.bgImage ? `url('${appSettings.bgImage}')` : 'none'); root.style.setProperty('--overlay-opacity', appSettings.overlayOpacity); }
+
+        function sembunyikanSemuaView() { document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active')); document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active')); }
+        function renderMenu() { const menuList = document.getElementById('menu-list'); menuList.innerHTML = ''; databaseLagu.forEach((lagu, idx) => { const btn = document.createElement('button'); btn.className = `menu-btn ${laguAktifId === lagu.id ? 'active' : ''}`; btn.innerText = `${idx + 1}. ${lagu.judul}`; btn.onclick = () => tampilkanLagu(lagu.id); menuList.appendChild(btn); }); }
+        
+        function tampilkanLagu(id) { 
+            laguAktifId = id; sembunyikanSemuaView(); document.getElementById('view-lirik').classList.add('active'); renderMenu(); 
+            const lagu = databaseLagu.find(l => l.id === id); if(!lagu) return; 
+            document.getElementById('action-buttons').style.display = 'flex'; document.getElementById('display-judul').innerText = lagu.judul; 
+            const container = document.getElementById('display-bait-container'); container.innerHTML = ''; 
+            lagu.baits.forEach(bait => { 
+                const div = document.createElement('div'); div.className = 'bait-preview'; 
+                div.innerHTML = `<div class="arab-prev">${bait.arab.replace(/\n/g, '<br>')}</div><div class="latin-prev">${bait.latin.replace(/\n/g, '<br>')}</div>`; 
+                container.appendChild(div); 
+            }); 
+        }
+
+        // --- AUTO SPLIT LOGIC ---
+        window.prosesAutoSplit = function() {
+            const bulkText = document.getElementById('bulk-input').value.trim();
+            if(!bulkText) return alert("Silakan paste lirik campuran di kotak terlebih dahulu!");
+            const baris = bulkText.split(/\r?\n/);
+            let pendingArab = ""; let pendingLatin = "";
+
+            baris.forEach(b => {
+                let text = b.trim(); if (text === '') return;
+                const matchLatin = text.match(/[a-zA-Z]/);
+                const matchArab = text.match(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/);
+
+                if (matchLatin && matchArab) {
+                    if (pendingArab || pendingLatin) { window.tambahBaitKosong(pendingArab, pendingLatin); pendingArab = ""; pendingLatin = ""; }
+                    let arabPart = ""; let latinPart = "";
+
+                    if (matchArab.index < matchLatin.index) {
+                        let idx = matchLatin.index;
+                        while(idx > 0) {
+                            let prevChar = text[idx - 1];
+                            if (/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(prevChar)) break;
+                            idx--;
+                        }
+                        arabPart = text.substring(0, idx).trim(); latinPart = text.substring(idx).trim();
+                    } else {
+                        let idx = matchArab.index;
+                        while(idx > 0) {
+                            let prevChar = text[idx - 1];
+                            if (/[a-zA-Z]/.test(prevChar)) break;
+                            idx--;
+                        }
+                        latinPart = text.substring(0, idx).trim(); arabPart = text.substring(idx).trim();
+                    }
+                    arabPart = arabPart.replace(/[-/\\|\s]+$/, '');
+                    window.tambahBaitKosong(arabPart, latinPart);
+                } else if (matchArab && !matchLatin) {
+                    if (pendingArab) { window.tambahBaitKosong(pendingArab, pendingLatin); pendingLatin = ""; }
+                    pendingArab = text;
+                } else if (matchLatin && !matchArab) {
+                    if (pendingArab) { pendingLatin = text; window.tambahBaitKosong(pendingArab, pendingLatin); pendingArab = ""; pendingLatin = ""; } 
+                    else { window.tambahBaitKosong("", text); }
+                } else {
+                    if(pendingArab) pendingArab += " " + text; else if(pendingLatin) pendingLatin += " " + text;
+                }
+            });
+            if (pendingArab || pendingLatin) { window.tambahBaitKosong(pendingArab, pendingLatin); }
+            document.getElementById('bulk-input').value = '';
+            document.getElementById('editor-baits-container').scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+
+        // --- PPT MODE LOGIC ---
+        let pptBaits = []; let pptCurrentIdx = 0;
+        window.masukPresentasi = function() { const lagu = databaseLagu.find(l => l.id === laguAktifId); if (!lagu || lagu.baits.length === 0) return; pptBaits = lagu.baits; pptCurrentIdx = 0; const sidebar = document.getElementById('ppt-sidebar'); sidebar.innerHTML = ''; pptBaits.forEach((bait, i) => { const div = document.createElement('div'); div.className = 'ppt-thumb-wrap'; div.id = 'thumb-' + i; div.onclick = () => renderSlide(i); div.innerHTML = `<div class="ppt-num">${i + 1}</div><div class="ppt-box"><div class="ppt-box-arab">${bait.arab.substring(0, 20)}...</div><div class="ppt-box-latin">arti</div></div>`; sidebar.appendChild(div); }); document.getElementById('ppt-mode').classList.add('active'); renderSlide(0); document.addEventListener('keydown', handleKeyPPT); }
+        function renderSlide(index) { pptCurrentIdx = index; document.getElementById('ppt-arabic').innerHTML = pptBaits[index].arab.replace(/\n/g, '<br>'); document.getElementById('ppt-latin').innerHTML = pptBaits[index].latin.replace(/\n/g, '<br>'); document.querySelectorAll('.ppt-thumb-wrap').forEach(el => el.classList.remove('active')); const activeThumb = document.getElementById('thumb-' + index); if(activeThumb) { activeThumb.classList.add('active'); activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } }
+        window.keluarPresentasi = function() { document.getElementById('ppt-mode').classList.remove('active'); document.removeEventListener('keydown', handleKeyPPT); }
+        function handleKeyPPT(e) { if(e.key === 'Escape') window.keluarPresentasi(); else if(e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); if(pptCurrentIdx < pptBaits.length - 1) renderSlide(pptCurrentIdx + 1); } else if(e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); if(pptCurrentIdx > 0) renderSlide(pptCurrentIdx - 1); } }
+
+        // Script Opening Splash Screen
+        window.addEventListener('load', () => {
+            const splash = document.getElementById('splash-screen');
+            setTimeout(() => { splash.style.opacity = '0'; }, 4000);
+            setTimeout(() => { splash.style.display = 'none'; }, 5000);
+        });
+    </script>
+</body>
+</html>
