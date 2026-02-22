@@ -23,7 +23,6 @@
         body.mode-editor #btn-mode-toggle { background-color: var(--danger); }
         body.mode-editor #btn-mode-toggle:hover { background-color: #c0392b; }
 
-        /* Sembunyikan tombol edit/tambah jika di Mode Pengguna */
         body.mode-pengguna .btn-tambah-menu { display: none; }
         body.mode-pengguna .btn-edit { display: none; }
         body.mode-pengguna .btn-hapus { display: none; }
@@ -42,6 +41,12 @@
         .btn-tambah-menu { background-color: var(--accent); color: #000; border: none; padding: 10px; width: 100%; font-weight: bold; border-radius: 5px; cursor: pointer; transition: 0.3s; margin-bottom: 10px; }
         .btn-setting { background-color: #444; color: white; border: none; padding: 10px; width: 100%; font-weight: bold; border-radius: 5px; cursor: pointer; transition: 0.3s; }
         .btn-setting:hover { background-color: #555; }
+        
+        /* KOTAK PENCARIAN */
+        .search-container { padding: 0 20px 15px 20px; border-bottom: 1px solid #333; }
+        .search-input { width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 5px; font-size: 14px; box-sizing: border-box; transition: 0.3s; }
+        .search-input:focus { border-color: var(--accent); outline: none; background: #1a1a1a; }
+        
         .menu-list { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
         .menu-btn { background: none; border: none; color: var(--text-dim); padding: 15px 20px; text-align: left; font-size: 16px; cursor: pointer; border-left: 4px solid transparent; border-bottom: 1px solid #222; }
         .menu-btn:hover, .menu-btn.active { background-color: rgba(255,255,255,0.05); color: var(--accent); border-left: 4px solid var(--accent); }
@@ -126,7 +131,9 @@
         ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
     </style>
 </head>
-<body class="mode-pengguna"> <div id="splash-screen">
+<body class="mode-pengguna"> 
+
+    <div id="splash-screen">
         <img src="https://raw.githubusercontent.com/hzai18/Pustaka-Lirik-TV/refs/heads/main/gold.png" alt="Logo Al-Mursyidul Amin" onerror="this.style.display='none'">
         <h1>PUSTAKA SYAIR AL-MURSYIDUL AMIN TV</h1>
         <p style="color: #666; margin-top: 10px; font-style: italic;">Memuat Database Cloud...</p>
@@ -140,6 +147,11 @@
             <button class="btn-tambah-menu" onclick="bukaFormTambah()">➕ Tambah Lirik Baru</button>
             <button class="btn-setting" onclick="bukaPengaturan()">⚙️ Pengaturan Tampilan</button>
         </div>
+        
+        <div class="search-container">
+            <input type="text" id="search-lagu" class="search-input" placeholder="🔍 Cari Judul Syair..." oninput="filterMenu()">
+        </div>
+
         <div class="menu-list" id="menu-list">
             <p style="text-align:center; color:#888; margin-top: 20px;">Menyelaraskan data...</p>
         </div>
@@ -250,10 +262,7 @@
         let isInitialLoad = true;
         let appMode = 'pengguna'; 
 
-        // ==========================================
-        // GANTI PIN RAHASIA ANDA DI SINI!
         const SECRET_PIN = "1234";
-        // ==========================================
 
         const defaultSettings = { arabSize: 60, arabColor: "#ffffff", latinSize: 28, latinColor: "#eeeeee", bgColor: "#121212", bgImage: "", overlayOpacity: 0.5 };
         let appSettings = JSON.parse(localStorage.getItem('setting_lirik_aswaja')) || defaultSettings;
@@ -294,7 +303,9 @@
             
             document.getElementById('dot-status').classList.add('online');
             document.getElementById('text-status').innerText = "Cloud Terhubung";
-            renderMenu();
+            
+            // Re-render menu dengan filter pencarian jika sedang ada yang diketik
+            window.filterMenu();
 
             if(isInitialLoad) {
                 setTimeout(() => {
@@ -314,30 +325,23 @@
             }
         });
 
-        // --- SISTEM LOGIN PIN ---
         window.toggleMode = function() {
             const btnToggle = document.getElementById('btn-mode-toggle');
-            
             if(appMode === 'pengguna') {
-                // Minta PIN jika ingin masuk ke Mode Editor
                 const inputPin = prompt("🔒 Masukkan PIN rahasia untuk membuka Mode Editor:");
-                
                 if(inputPin === SECRET_PIN) {
                     appMode = 'editor';
                     document.body.classList.remove('mode-pengguna');
                     document.body.classList.add('mode-editor');
                     btnToggle.innerText = "🔓 Mode Editor Aktif (Klik untuk Kunci)";
-                    // alert("Berhasil masuk ke Mode Editor!"); // Opsional
                 } else if (inputPin !== null) {
                     alert("❌ PIN Salah! Akses ditolak.");
                 }
             } else {
-                // Jika sudah di Mode Editor, langsung kunci tanpa nanya PIN
                 appMode = 'pengguna';
                 document.body.classList.remove('mode-editor');
                 document.body.classList.add('mode-pengguna');
                 btnToggle.innerText = "🔒 Mode Pengguna (Terkunci)";
-                
                 if(document.getElementById('view-form').classList.contains('active') || document.getElementById('view-settings').classList.contains('active')) {
                     if(databaseLagu.length > 0) window.tampilkanLagu(databaseLagu[0].id);
                     else sembunyikanSemuaView();
@@ -380,14 +384,42 @@
         };
 
         window.hapusLaguSaatIni = async function() {
-            if(confirm("Yakin hapus lirik ini dari seluruh perangkat?")) { try { await deleteDoc(doc(db, "lirik_koleksi", laguAktifId)); laguAktifId = null; } catch(e) { alert("Gagal menghapus."); } }
+            if(confirm("Yakin hapus lirik ini dari seluruh perangkat?")) { try { await deleteDoc(doc(db, "lirik_koleksi", laguAktifId)); laguAktifId = null; document.getElementById('search-lagu').value = ''; } catch(e) { alert("Gagal menghapus."); } }
         };
 
         function sembunyikanSemuaView() { document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active')); document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active')); }
-        function renderMenu() { const menuList = document.getElementById('menu-list'); menuList.innerHTML = ''; databaseLagu.forEach((lagu, idx) => { const btn = document.createElement('button'); btn.className = `menu-btn ${laguAktifId === lagu.id ? 'active' : ''}`; btn.innerText = `${idx + 1}. ${lagu.judul}`; btn.onclick = () => window.tampilkanLagu(lagu.id); menuList.appendChild(btn); }); }
         
+        // --- LOGIKA PENCARIAN (FILTER) ---
+        window.filterMenu = function() {
+            const searchText = document.getElementById('search-lagu').value.toLowerCase();
+            const menuList = document.getElementById('menu-list'); 
+            menuList.innerHTML = ''; 
+            
+            let filteredLagu = databaseLagu;
+            if (searchText) {
+                filteredLagu = databaseLagu.filter(lagu => lagu.judul.toLowerCase().includes(searchText));
+            }
+
+            if(filteredLagu.length === 0 && databaseLagu.length > 0) {
+                menuList.innerHTML = '<p style="text-align:center; color:#888; font-style:italic;">Tidak ditemukan</p>';
+                return;
+            }
+
+            filteredLagu.forEach((lagu, idx) => { 
+                // Cari index asli dari databaseLagu untuk penomoran agar nomornya tetap konsisten
+                const originalIndex = databaseLagu.findIndex(l => l.id === lagu.id) + 1;
+                
+                const btn = document.createElement('button'); 
+                btn.className = `menu-btn ${laguAktifId === lagu.id ? 'active' : ''}`; 
+                btn.innerText = `${originalIndex}. ${lagu.judul}`; 
+                btn.onclick = () => window.tampilkanLagu(lagu.id); 
+                menuList.appendChild(btn); 
+            }); 
+        }
+
         window.tampilkanLagu = function(id) { 
-            laguAktifId = id; sembunyikanSemuaView(); document.getElementById('view-lirik').classList.add('active'); renderMenu(); 
+            laguAktifId = id; sembunyikanSemuaView(); document.getElementById('view-lirik').classList.add('active'); 
+            window.filterMenu(); // Render menu untuk menandai lagu aktif
             const lagu = databaseLagu.find(l => l.id === id); if(!lagu) return; 
             document.getElementById('action-buttons').style.display = 'flex'; document.getElementById('display-judul').innerText = lagu.judul; 
             const container = document.getElementById('display-bait-container'); container.innerHTML = ''; 
@@ -433,6 +465,9 @@
         window.keluarPresentasi = function() { document.getElementById('ppt-mode').classList.remove('active'); document.removeEventListener('keydown', handleKeyPPT); }
         
         function handleKeyPPT(e) { 
+            // Jangan jalankan shortcut jika pengguna sedang mengetik di input pengaturan (misal paste URL gambar)
+            if (e.target.tagName === 'INPUT') return;
+
             if(e.key === 'Escape') window.keluarPresentasi(); 
             else if(e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); if(pptCurrentIdx < pptBaits.length - 1) renderSlide(pptCurrentIdx + 1); } 
             else if(e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); if(pptCurrentIdx > 0) renderSlide(pptCurrentIdx - 1); } 
